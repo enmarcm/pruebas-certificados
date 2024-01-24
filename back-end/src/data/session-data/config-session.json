@@ -1,0 +1,10 @@
+{
+  "secret": "cookie",
+  "resave": true,
+  "saveUninitialized": true,
+  "cookie": {
+    "maxAge": 60000,
+    "name": "cookie-session"
+  },
+  "rolling": true
+}

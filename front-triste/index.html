@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section>
+      <form id="evento">
+        <label for="privateKey">
+          Private Key
+          <textarea name="privateKey" id="privateKey"></textarea>
+        </label>
+        <label for="CSR">
+          CSR
+          <textarea name="CSR" id="CSR"></textarea>
+        </label>
+        <label for="company">
+          Company name
+          <textarea name="company" id="company"></textarea>
+        </label>
+        <label for="certificadora">
+          Certificadora
+          <textarea name="certificadora" id="certificadora"></textarea>
+        </label>
+        <label for="email">
+          Correo
+          <textarea name="email" id="email"></textarea>
+        </label>
+
+        <button>Enviar</button>
+      </form>
+      <div class="contenedorCertificado"></div>
+    </section>
+
+    <script src="./main.js" type="module"></script>
+  </body>
+</html>

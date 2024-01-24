@@ -1,0 +1,12 @@
+form{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+}
+
+form > label{
+    display:flex;
+    flex-direction: column;
+    width: 100%;
+}

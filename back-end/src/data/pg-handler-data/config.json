@@ -1,0 +1,10 @@
+{
+  "database": "session",
+  "user": "postgres",
+  "password": "1234",
+  "port": 5432,
+  "ssl": false,
+  "max": 20, 
+  "idleTimeoutMillis": 1000,
+  "maxUses": 7500
+}
