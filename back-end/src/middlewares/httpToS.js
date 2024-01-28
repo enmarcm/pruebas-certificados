@@ -1,5 +1,6 @@
 const httpToS = (req, res, next) =>{
-  console.log(req.secure)
+  if(!req.secure())
+  next()
 }
 
 export default httpToS

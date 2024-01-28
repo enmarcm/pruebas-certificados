@@ -1,6 +1,13 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import CryptoJS from "crypto-js";
+import fs from "node:fs/promises";
+import { Transform, pipeline } from "node:stream";
+import { promisify } from "node:util";
+import fsNormal from "node:fs";
+
+const pipelineAsync = promisify(pipeline);
+const MAX_BLOCK_SIZE = 117;
 
 class CryptManager {
   /**
@@ -114,7 +121,7 @@ class CryptManager {
    * @throws {Error} Si ocurre un error durante la generación de claves.
    */
   static generatePairKeys = ({
-    modulusLength = 4096,
+    modulusLength = 1024,
     publicType = "spki",
     privateType = "pkcs8",
   }) => {
@@ -153,12 +160,16 @@ class CryptManager {
    * @returns {string} Los datos encriptados en formato base64.
    */
   static publicKeyEncrypt = ({ publicKey, data }) => {
-    const formatedPublicKey = publicKey.replace(/\n+$/, "");
-    const encryptedData = crypto.publicEncrypt(
-      formatedPublicKey,
-      Buffer.from(data)
-    );
-    return encryptedData.toString("base64");
+    try {
+      const formatedPublicKey = publicKey.replace(/\n+$/, "");
+      const encryptedData = crypto.publicEncrypt(
+        formatedPublicKey,
+        Buffer.from(data)
+      );
+      return encryptedData.toString("base64");
+    } catch (error) {
+      return { error: `Ocurrio un error: ${error}` };
+    }
   };
 
   /**
@@ -182,6 +193,69 @@ class CryptManager {
       console.error(`Ocurrio un error ${error}`);
       return { error: `Ocurrio un error ${error}` };
     }
+  };
+
+  static publicFileEncrypt = async ({ publicKey, filePath, routeFinal }) => {
+    const formatedKey = publicKey.replace(/\n+$/, "");
+    const readStream = fsNormal.createReadStream(filePath, { highWaterMark: MAX_BLOCK_SIZE });
+    const writeStream = fsNormal.createWriteStream(routeFinal);
+  
+    await pipelineAsync(
+      readStream,
+      new Transform({
+        transform(chunk, encoding, callback) {
+          let encryptedBlock;
+          try {
+            encryptedBlock = crypto.publicEncrypt(formatedKey, chunk);
+          } catch (error) {
+            callback(new Error(`Ocurrio un error: ${error}`));
+            return;
+          }
+          const lengthBuffer = Buffer.alloc(2);
+          lengthBuffer.writeUInt16BE(encryptedBlock.length, 0);
+          callback(null, Buffer.concat([lengthBuffer, encryptedBlock]));
+        },
+      }),
+      writeStream
+    );
+  };
+  
+  static privateFileDecrypt = async ({ privateKey, filePath, routeFinal }) => {
+    const formatedKey = privateKey.replace(/\n+$/, "");
+    const readStream = fsNormal.createReadStream(filePath);
+    const writeStream = fsNormal.createWriteStream(routeFinal);
+  
+    let buffer = Buffer.alloc(0);
+    let decryptedBlocks = [];
+  
+    await pipelineAsync(
+      readStream,
+      new Transform({
+        transform(chunk, encoding, callback) {
+          buffer = Buffer.concat([buffer, chunk]);
+  
+          while (buffer.length >= 2) {
+            const blockLength = buffer.readUInt16BE(0);
+            if (buffer.length >= blockLength + 2) {
+              const encryptedBlock = buffer.slice(2, blockLength + 2);
+              buffer = buffer.slice(blockLength + 2);
+              try {
+                const decryptedBlock = crypto.privateDecrypt(formatedKey, encryptedBlock);
+                decryptedBlocks.push(decryptedBlock);
+              } catch (error) {
+                callback(new Error(`Ocurrio un error: ${error}`));
+                return;
+              }
+            } else {
+              break;
+            }
+          }
+          callback(null, Buffer.concat(decryptedBlocks));
+          decryptedBlocks = [];
+        },
+      }),
+      writeStream
+    );
   };
 }
 

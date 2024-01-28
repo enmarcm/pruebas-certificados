@@ -4,7 +4,7 @@ import SignSSL from "../components/SignSSL.js";
 const mainRouter = Router();
 
 mainRouter.get("/", (req, res) => {
-  return res.json({ message: "Hola mundo" });
+  return res.send('<h1>Hola mundo</h1>');
 });
 
 mainRouter.post("/", async (req, res) => {

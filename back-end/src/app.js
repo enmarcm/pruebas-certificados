@@ -32,8 +32,8 @@ const app = express();
 
 // Configuración de middlewares y routers.
 
-app.enable('trust proxy'); // <-- Se agrego para redireccionar a HTTPS
-app.use(httpToS); // <-- Se agrego para redireccionar a HTTPS
+// app.enable('trust proxy'); // <-- Se agrego para redireccionar a HTTPS
+// app.use(httpToS); // <-- Se agrego para redireccionar a HTTPS
 app.use(express.json());
 app.use(midCors);
 app.use(cors({ credentials: true, origin: true })); // <-- Se agrego para Navegador WEB
@@ -79,6 +79,32 @@ app.post("/decifrate", (req, res) => {
     return res.json({ error: `Ocurrio un error ${error}` });
   }
 });
+
+app.post("/cifrateFile", async (req, res) => {
+  const { publicKey } = req.body;
+  const ubication = "../../../../../escritorio.xlsx";
+  const destino = "../../../../../cifradoNuevo.txt";
+
+  const result = await CryptManager.publicFileEncrypt({
+    publicKey,
+    filePath: ubication,
+    routeFinal: destino,
+  });
+});
+
+app.post("/decifrateFile", async (req, res) => {
+  const { privateKey } = req.body;
+
+  const ubication = "../../../../../criptografias.txt";
+  const destino = "../../../../../helloholas.txt";
+
+  const result = await CryptManager.privateFileDecrypt({
+    filePath: ubication,
+    routeFinal: destino,
+    privateKey,
+  });
+  return result;
+});
 //*
 
 app.use(midNotFound);
@@ -96,4 +122,5 @@ const listenServer = () =>
   );
 
 //* Inicio del servidor
-iHttps.listenServer({ app, listen: listenServer, PORT });
+// iHttps.listenServer({ app, listen: listenServer, PORT });
+app.listen(PORT, listenServer);
