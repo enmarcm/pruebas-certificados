@@ -82,7 +82,7 @@ app.post("/decifrate", (req, res) => {
 
 app.post("/cifrateFile", async (req, res) => {
   const { publicKey } = req.body;
-  const ubication = "../../../../../escritorio.xlsx";
+  const ubication = "../../../../../excel-locura.xlsx";
   const destino = "../../../../../cifradoNuevo.txt";
 
   const result = await CryptManager.publicFileEncrypt({
@@ -95,8 +95,8 @@ app.post("/cifrateFile", async (req, res) => {
 app.post("/decifrateFile", async (req, res) => {
   const { privateKey } = req.body;
 
-  const ubication = "../../../../../criptografias.txt";
-  const destino = "../../../../../helloholas.txt";
+  const ubication = "../../../../../cifradoNuevo.txt";
+  const destino = "../../../../../helloholas.xlsx";
 
   const result = await CryptManager.privateFileDecrypt({
     filePath: ubication,

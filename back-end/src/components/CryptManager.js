@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import fsNormal from "node:fs";
 
 const pipelineAsync = promisify(pipeline);
-const MAX_BLOCK_SIZE = 117;
+const MAX_BLOCK_SIZE = 501;
 
 class CryptManager {
   /**
@@ -121,7 +121,7 @@ class CryptManager {
    * @throws {Error} Si ocurre un error durante la generación de claves.
    */
   static generatePairKeys = ({
-    modulusLength = 1024,
+    modulusLength = 4096,
     publicType = "spki",
     privateType = "pkcs8",
   }) => {
@@ -197,61 +197,57 @@ class CryptManager {
 
   static publicFileEncrypt = async ({ publicKey, filePath, routeFinal }) => {
     const formatedKey = publicKey.replace(/\n+$/, "");
-    const readStream = fsNormal.createReadStream(filePath, { highWaterMark: MAX_BLOCK_SIZE });
+    const readStream = fsNormal.createReadStream(filePath, {
+      highWaterMark: 501,
+    });
     const writeStream = fsNormal.createWriteStream(routeFinal);
-  
+
     await pipelineAsync(
       readStream,
       new Transform({
         transform(chunk, encoding, callback) {
           let encryptedBlock;
           try {
-            encryptedBlock = crypto.publicEncrypt(formatedKey, chunk);
+            encryptedBlock = crypto.publicEncrypt(
+              { key: formatedKey, padding: crypto.constants.RSA_PKCS1_PADDING },
+              chunk
+            );
           } catch (error) {
             callback(new Error(`Ocurrio un error: ${error}`));
             return;
           }
-          const lengthBuffer = Buffer.alloc(2);
-          lengthBuffer.writeUInt16BE(encryptedBlock.length, 0);
-          callback(null, Buffer.concat([lengthBuffer, encryptedBlock]));
+          callback(null, encryptedBlock);
         },
       }),
       writeStream
     );
   };
-  
+
   static privateFileDecrypt = async ({ privateKey, filePath, routeFinal }) => {
     const formatedKey = privateKey.replace(/\n+$/, "");
-    const readStream = fsNormal.createReadStream(filePath);
+    const readStream = fsNormal.createReadStream(filePath, {
+      highWaterMark: 512,
+    });
     const writeStream = fsNormal.createWriteStream(routeFinal);
-  
-    let buffer = Buffer.alloc(0);
-    let decryptedBlocks = [];
-  
+
     await pipelineAsync(
       readStream,
       new Transform({
         transform(chunk, encoding, callback) {
-          buffer = Buffer.concat([buffer, chunk]);
-  
-          while (buffer.length >= 2) {
-            const blockLength = buffer.readUInt16BE(0);
-            if (buffer.length >= blockLength + 2) {
-              const encryptedBlock = buffer.slice(2, blockLength + 2);
-              buffer = buffer.slice(blockLength + 2);
-              try {
-                const decryptedBlock = crypto.privateDecrypt(formatedKey, encryptedBlock);
-                decryptedBlocks.push(decryptedBlock);
-              } catch (error) {
-                callback(new Error(`Ocurrio un error: ${error}`));
-                return;
-              }
-            } else {
-              break;
-            }
+          let decryptedBlock;
+          try {
+            decryptedBlock = crypto.privateDecrypt(
+              {
+                key: formatedKey,
+                padding: crypto.constants.RSA_PKCS1_PADDING,
+              },
+              chunk
+            );
+          } catch (error) {
+            callback(new Error(`Ocurrio un error: ${error}`));
+            return;
           }
-          callback(null, Buffer.concat(decryptedBlocks));
-          decryptedBlocks = [];
+          callback(null, decryptedBlock);
         },
       }),
       writeStream
