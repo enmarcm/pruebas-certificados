@@ -13,10 +13,12 @@ import {
   midNotFound,
   cors,
   httpToS,
+  upload,
 } from "./middlewares/middlewares.js";
 import mainRouter from "./routers/mainRouter.js";
 import CryptManager from "./components/CryptManager.js";
 import iHttps from "./data/https-data/iHttps.js";
+import path from "node:path";
 
 /**
  * Puerto en el que se iniciará el servidor.
@@ -90,20 +92,53 @@ app.post("/cifrateFile", async (req, res) => {
     filePath: ubication,
     routeFinal: destino,
   });
+  res.send(result);
 });
 
-app.post("/decifrateFile", async (req, res) => {
+// app.post("/decifrateFile", upload.array("files"), async (req, res) => {
+//   const { privateKey } = req.body;
+
+//   const ubication = "../../../../../cifradoNuevo.txt";
+//   const destino = "../../../../../excelsito.xlsx";
+
+//   const result = await CryptManager.privateFileDecrypt({
+//     filePath: ubication,
+//     routeFinal: destino,
+//     privateKey,
+//   });
+//   res.send(result);
+// });
+
+app.post("/decifrateFile", upload.array("files"), async (req, res) => {
   const { privateKey } = req.body;
+  if(!privateKey) return res.json({error: "No se envio la llave privada"});
 
-  const ubication = "../../../../../cifradoNuevo.txt";
-  const destino = "../../../../../helloholas.xlsx";
+  try {
+    const decryptPromises = req.files.map(async (file) => {
+      const ubication = file.path;
+      const originalName = path.basename(ubication, path.extname(ubication));
+      const destino = path.join(
+        path.dirname(ubication),
+        originalName + "Descifrado.xlsx"
+      );
 
-  const result = await CryptManager.privateFileDecrypt({
-    filePath: ubication,
-    routeFinal: destino,
-    privateKey,
-  });
-  return result;
+      // const result = await CryptManager.privateFileDecrypt({
+      //   filePath: ubication,
+      //   routeFinal: destino,
+      //   privateKey,
+      // });
+
+      // return result;
+
+      return { ubication, destino };
+    });
+
+    const results = await Promise.all(decryptPromises);
+    console.log(results);
+    return res.send(results);
+  } catch (error) {
+    return res.send(`Hubo un error ${error}`);
+  }
 });
 //*
 

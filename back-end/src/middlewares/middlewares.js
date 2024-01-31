@@ -3,6 +3,7 @@ import midNotFound from "./midNotFound.js";
 import midJson from "./midJson.js";
 import cors from "cors";
 import httpToS from "./httpToS.js";
+import upload from "./chargeFiles.js";
 
 /**
  * Middleware para permitir el acceso a recursos de diferentes orígenes.
@@ -33,3 +34,9 @@ export { cors };
  * @type {Function}
  */
 export { httpToS };
+
+/**
+ * Middleware para gestionar la carga de archivos
+ * @type {Function}
+ */
+export { upload };
