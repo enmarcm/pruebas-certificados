@@ -72,13 +72,20 @@ decifrateRouter.post("/fileExcel", upload.array("files"), async (req, res) => {
 
     await Promise.all(decryptPromises);
 
-    const minFile = allPrices.reduce(
-      (min, file) => (file.minValue < min.minValue ? file : min),
-      allPrices[0]
+    const minFiles = allPrices.reduce(
+      (minFiles, file) => {
+        if (file.minValue < minFiles[0].minValue) {
+          return [file];
+        } else if (file.minValue === minFiles[0].minValue) {
+          return [...minFiles, file];
+        } else {
+          return minFiles;
+        }
+      },
+      [allPrices[0]]
     );
 
-    console.log(allPrices);
-    return res.send(minFile);
+    return res.send(minFiles);
   } catch (error) {
     console.error(error);
     return res.json({ error: `Hubo un error ${error}` });
@@ -86,7 +93,6 @@ decifrateRouter.post("/fileExcel", upload.array("files"), async (req, res) => {
 });
 
 decifrateRouter.post("/file", upload.array("files"), async (req, res) => {
-  
   const privateKey =
     req.body?.privateKey === "null" || !req.body?.privateKey
       ? await obtenerPrivateKey()
