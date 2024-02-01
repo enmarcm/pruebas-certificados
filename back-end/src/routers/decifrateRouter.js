@@ -1,8 +1,9 @@
 import upload from "../middlewares/chargeFiles.js";
 import { Router } from "express";
 import CryptManager from "../components/CryptManager.js";
-import path from "node:path";
-import XLSX from "xlsx";
+import path, { format } from "node:path";
+import ExcelComponent from "../components/ExcelComponent.js";
+import fs from "node:fs/promises";
 
 const decifrateRouter = Router();
 
@@ -19,11 +20,22 @@ decifrateRouter.post("/", (req, res) => {
   }
 });
 
+const obtenerPrivateKey = async () => {
+  const currentDirectory = process.cwd();
+  const ubication = path.join(currentDirectory, "src/data/privateKey.txt");
+  const newPrivateKey = await fs.readFile(ubication, "utf-8");
 
+  if (newPrivateKey.length === 0)
+    throw new Error("No se encontro la llave privada");
 
-decifrateRouter.post("/file", upload.array("files"), async (req, res) => {
-  const { privateKey } = req.body;
-  if (!privateKey) return res.json({ error: "No se envio la llave privada" });
+  return newPrivateKey;
+};
+
+decifrateRouter.post("/fileExcel", upload.array("files"), async (req, res) => {
+  const privateKey =
+    req.body?.privateKey === "null" || !req.body?.privateKey
+      ? await obtenerPrivateKey()
+      : req.body?.privateKey;
 
   const allPrices = [];
 
@@ -42,18 +54,18 @@ decifrateRouter.post("/file", upload.array("files"), async (req, res) => {
         privateKey,
       });
 
-      const workbook = XLSX.readFile(destino);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const sheets = ExcelComponent.readSheet({
+        filePath: destino,
+        indexSheet: 0,
+      });
 
-      const precioIndex = rows[0].findIndex((col) => col === "precio");
+      const rows = ExcelComponent.convertToJson({ worksheet: sheets });
 
-      const precioColumn = rows
-        .slice(1)
-        .map((row) => row[precioIndex]);
-
-      const minValue = precioColumn.find((value) => !isNaN(value));
+      const minValue = ExcelComponent.returnFirnResult({
+        rows,
+        columnName: "precio",
+        isNumber: true,
+      });
 
       allPrices.push({ name: originalName, minValue });
     });
@@ -65,11 +77,45 @@ decifrateRouter.post("/file", upload.array("files"), async (req, res) => {
       allPrices[0]
     );
 
-    console.log(allPrices)
+    console.log(allPrices);
     return res.send(minFile);
   } catch (error) {
     console.error(error);
-    return res.json({error: `Hubo un error ${error}`});
+    return res.json({ error: `Hubo un error ${error}` });
+  }
+});
+
+decifrateRouter.post("/file", upload.array("files"), async (req, res) => {
+  
+  const privateKey =
+    req.body?.privateKey === "null" || !req.body?.privateKey
+      ? await obtenerPrivateKey()
+      : req.body?.privateKey;
+
+  const { extensionFile = "txt" } = req.body;
+
+  try {
+    const decryptPromises = req.files.map(async (file) => {
+      const ubication = file.path;
+      const originalName = path.basename(ubication, path.extname(ubication));
+      const destino = path.join(
+        path.dirname(ubication),
+        originalName + `Descifrado.${extensionFile}`
+      );
+
+      await CryptManager.privateFileDecrypt({
+        filePath: ubication,
+        routeFinal: destino,
+        privateKey,
+      });
+    });
+
+    await Promise.all(decryptPromises);
+
+    return res.json({ message: `Se decifro correctamente` });
+  } catch (error) {
+    console.error(error);
+    return res.json({ error: `Hubo un error ${error}` });
   }
 });
 

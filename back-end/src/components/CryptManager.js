@@ -1,14 +1,12 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import CryptoJS from "crypto-js";
-import fs from "node:fs/promises";
 import { Transform, pipeline } from "node:stream";
 import { promisify } from "node:util";
 import fsNormal from "node:fs";
 import { TYPE_KEY } from "../constants.js";
 
 const pipelineAsync = promisify(pipeline);
-const MAX_BLOCK_SIZE = 501;
 
 class CryptManager {
   /**
