@@ -1,11 +1,8 @@
 import { Router } from "express";
-import CryptManager from "../components/CryptManager.js";
+import CryptController from "../../controllers/CryptController.js";
 
 const keysRouter = Router();
 
-keysRouter.get("/", (req, res) => {
-  const key = CryptManager.generatePairKeys({});
-  return res.send(key);
-});
+keysRouter.get("/", CryptController.generatePairKeys);
 
 export default keysRouter;

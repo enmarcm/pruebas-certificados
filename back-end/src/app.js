@@ -15,7 +15,13 @@ import {
   httpToS,
   upload,
 } from "./middlewares/middlewares.js";
-import {mainRouter, decifrateRouter, cifrateRouter, keysRouter} from "./routers/routers.js";
+import {
+  mainRouter,
+  decifrateRouter,
+  cifrateRouter,
+  keysRouter,
+  SSLRouter,
+} from "./routers/routers.js";
 import iHttps from "./data/https-data/iHttps.js";
 
 /**
@@ -43,8 +49,9 @@ app.use(midJson); // <-- Se agrego para manejar excepciones de JSON en formato i
 //? Desde aqui colocamos los routers
 app.use("/", mainRouter);
 app.use("/decifrate", decifrateRouter);
-app.use("/cifrate", cifrateRouter)
-app.use("/generatePairKeys", keysRouter)
+app.use("/cifrate", cifrateRouter);
+app.use("/generatePairKeys", keysRouter);
+app.use("/SSL", SSLRouter);
 
 app.use(midNotFound);
 
