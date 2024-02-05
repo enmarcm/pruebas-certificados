@@ -1,3 +1,5 @@
+import SignSSL from "../src/components/SignSSL.js";
+
 class SSLController {
   static obtainCSR = async (req, res) => {
     const {

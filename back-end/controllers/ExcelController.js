@@ -1,7 +1,7 @@
 import CryptManager from "../src/components/CryptManager.js";
 import ExcelComponent from "../src/components/ExcelComponent.js";
 import { getPrivateKey } from "../src/utils/getPrivateKey.js";
-import path from "node:path"
+import path from "node:path";
 
 class ExcelController {
   static compareWinner = async (req, res) => {
@@ -57,8 +57,12 @@ class ExcelController {
         },
         [allPrices[0]]
       );
-
-      return res.send(minFiles);
+      
+      if (minFiles.some(item => item === null || item === undefined)) {
+        return res.json({error: "Ocurrió un error, faltan datos"});
+      }
+      
+      return res.json({ success: minFiles });
     } catch (error) {
       console.error(error);
       return res.json({ error: `Hubo un error ${error}` });

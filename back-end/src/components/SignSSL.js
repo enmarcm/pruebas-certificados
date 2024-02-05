@@ -31,6 +31,15 @@ class SignSSL {
     email = "theenmanuel123@gmail.com",
   }) => {
     try {
+      if (
+        !csrPem.includes("-----BEGIN CERTIFICATE REQUEST-----") ||
+        !csrPem.includes("-----END CERTIFICATE REQUEST-----") ||
+        !privateKeyPem.includes("-----BEGIN PRIVATE KEY-----") ||
+        !privateKeyPem.includes("-----END PRIVATE KEY-----")
+      ) {
+        return { error: "Formato de csrPem o privateKeyPem incorrecto" };
+      }
+
       const formatedCsrPem = csrPem.replace(/\n+$/, "");
       const formatedKeyPem = privateKeyPem.replace(/\n+$/, "");
 
@@ -125,8 +134,8 @@ class SignSSL {
 
     //Formatear
     const formattedPrivateKey = privateKey
-  .replace(/\\n/g, "\n")
-  .replace(/\\r/g, "\r");
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r");
 
     const privateKeyObject = forge.pki.privateKeyFromPem(formattedPrivateKey);
 

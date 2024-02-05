@@ -6,6 +6,17 @@ class CryptController {
   static cifrateText = (req, res) => {
     try {
       const { publicKey, data } = req?.body;
+
+      if (
+        !publicKey.includes("-----BEGIN PUBLIC KEY-----") ||
+        !publicKey.includes("-----END PUBLIC KEY-----")
+      ) {
+        return res.json({
+          error: "La clave pública no está en formato correcto",
+        });
+      }
+
+      console.log(publicKey, data);
       if (!publicKey | !data)
         return res.json({ error: "Faltan datos o son invalidos" });
 
@@ -35,6 +46,15 @@ class CryptController {
       if (!privateKey | !data)
         return res.json({ error: "Faltan datos o son invalidos" });
 
+      if (
+        !privateKey.includes("-----BEGIN PRIVATE KEY-----") ||
+        !privateKey.includes("-----END PRIVATE KEY-----")
+      ) {
+        return res.json({
+          error: "La clave privada no está en formato correcto",
+        });
+      }
+
       const result = CryptManager.privateKeyDecrypt({ privateKey, data });
       return res.json({ data: result });
     } catch (error) {
@@ -43,14 +63,23 @@ class CryptController {
   };
 
   static decifrateFile = async (req, res) => {
-    const privateKey =
-      req.body?.privateKey === "null" || !req.body?.privateKey
-        ? await CryptController.getPrivateKey()
-        : req.body?.privateKey;
-
-    const { extensionFile = "txt" } = req.body;
-
     try {
+      const privateKey =
+        req.body?.privateKey === "null" || !req.body?.privateKey
+          ? await CryptController.getPrivateKey()
+          : req.body?.privateKey;
+
+      const { extensionFile = "txt" } = req.body;
+
+      if (
+        !privateKey.includes("-----BEGIN PRIVATE KEY-----") ||
+        !privateKey.includes("-----END PRIVATE KEY-----")
+      ) {
+        return res.json({
+          error: "La clave privada no está en formato correcto",
+        });
+      }
+
       const decryptPromises = req.files.map(async (file) => {
         const ubication = file.path;
         const originalName = path.basename(ubication, path.extname(ubication));
